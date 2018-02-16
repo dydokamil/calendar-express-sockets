@@ -1,7 +1,7 @@
 var ObjectID = require("mongodb").ObjectID;
 var _ = require("lodash");
 
-module.exports = function(app, db) {
+module.exports = function(app, db, io) {
   app.get("/events/:id", (req, res) => {
     const id = req.params.id;
     const details = { _id: new ObjectID(id) };
@@ -101,6 +101,7 @@ module.exports = function(app, db) {
           res.send({ error: "An error has occured." });
         } else {
           res.send(result.ops[0]);
+          io.emit("add_event", result.ops[0]);
         }
       });
   });
@@ -116,6 +117,7 @@ module.exports = function(app, db) {
           res.send({ error: "An error has occured" });
         } else {
           res.send(`Note ${id} deleted!`);
+          io.emit("remove_event", id);
         }
       });
   });

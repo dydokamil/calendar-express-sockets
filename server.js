@@ -20,8 +20,28 @@ app.use(bodyParser.json());
 MongoClient.connect(db.url, (err, database) => {
   if (err) return console.log(err);
 
-  require("./app/routes")(app, database);
-  app.listen(port, () => {
+  let server = app.listen(port, () => {
     console.log("We are live on " + port);
   });
+
+  let sockets = new Set();
+  const io = require("socket.io").listen(server);
+
+  io.on("connection", socket => {
+    console.log(`a user has connected: ${socket.id}`);
+    sockets.add(socket.id);
+    socket.on("message", event => {
+      console.log(event);
+    });
+    console.log(`${sockets.size} users currently connected`);
+
+    io.emit("usersLength", sockets.size);
+
+    socket.on("disconnect", () => {
+      sockets.delete(socket.id);
+      io.emit("usersLength", sockets.size);
+      console.log(`${sockets.size} users currently connected`);
+    });
+  });
+  require("./app/routes")(app, database, io);
 });
